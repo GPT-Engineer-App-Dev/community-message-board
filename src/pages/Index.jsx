@@ -1,14 +1,18 @@
-import { Box, Container, VStack, Text, Input, Button, HStack, Flex, Heading } from "@chakra-ui/react";
+import { Box, Container, VStack, Text, Input, Button, HStack, Flex, Heading, Spinner } from "@chakra-ui/react";
 import { useState } from "react";
 import { FaPlus } from "react-icons/fa";
 
+import { usePosts, useAddPost } from "../integrations/supabase/index.js";
+
 const Index = () => {
-  const [posts, setPosts] = useState([]);
   const [newPost, setNewPost] = useState("");
+
+  const { data: posts, isLoading, isError, error } = usePosts();
+  const addPostMutation = useAddPost();
 
   const handlePostSubmit = () => {
     if (newPost.trim()) {
-      setPosts([{ content: newPost, id: Date.now() }, ...posts]);
+      addPostMutation.mutate({ title: newPost, body: newPost, author_id: "user-id-placeholder" });
       setNewPost("");
     }
   };
@@ -28,19 +32,23 @@ const Index = () => {
               onChange={(e) => setNewPost(e.target.value)}
               bg="white"
             />
-            <Button leftIcon={<FaPlus />} colorScheme="blue" onClick={handlePostSubmit}>
+            <Button leftIcon={<FaPlus />} colorScheme="blue" onClick={handlePostSubmit} isLoading={addPostMutation.isLoading}>
               Post
             </Button>
           </HStack>
         </Box>
 
         <VStack spacing={4} align="stretch">
-          {posts.length === 0 ? (
+          {isLoading ? (
+            <Spinner />
+          ) : isError ? (
+            <Text>Error: {error.message}</Text>
+          ) : posts.length === 0 ? (
             <Text>No posts yet. Be the first to post!</Text>
           ) : (
             posts.map((post) => (
               <Box key={post.id} bg="white" p={4} borderRadius="md" boxShadow="sm">
-                <Text>{post.content}</Text>
+                <Text>{post.title}</Text>
               </Box>
             ))
           )}
